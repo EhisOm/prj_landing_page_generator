@@ -100,6 +100,8 @@ def generate_landing_page_infos():
     response['review'] = openai.Completion.create(engine='text-davinci-001', prompt=review, max_tokens=25)
     response['review'] = response["review"]['choices'][0]['text']
 
+    
+
     response['ideia'] = data['text']
     response['id_landing_page'] = 2
 
