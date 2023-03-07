@@ -1,137 +1,77 @@
-import Head from 'next/head';
-import Image from 'next/image';
-import styles from '@/styles/Home.module.css';
-import { useClerk } from '@clerk/clerk-react';
-import {
-  Button,
-  Nav,
-  Navbar,
-  NavDropdown,
-  Container,
-  Form,
-  FloatingLabel,
-} from 'react-bootstrap';
+import React from 'react';
 import { Page } from '@geist-ui/core';
+import NavBar from '@/components/NavBar';
 import RainbowContainer from '@/components/RainbowContainer';
-import GPLogo from '@/components/GPLogo';
-
-const SignUpButton = () => {
-  const { openSignUp } = useClerk();
-
-  return <Button onClick={openSignUp}>Sign up</Button>;
-};
-
-// TODO: Integrate Clerk logged in hook
-const isUserLoggedIn = true;
-
-// Once ready to deploy, remove Future Home stuff
-const showFutureHome = false;
+import StartUpIdeaForm from '@/components/StartUpIdeaForm';
+import TopDescription from '@/components/TopDescription';
+import { useClerk, useAuth } from '@clerk/clerk-react';
+import { useRouter } from 'next/router';
+import { LandingPageContext } from './_app';
 
 export default function Home() {
+  const { isSignedIn } = useAuth();
+  const { openSignUp } = useClerk();
+  const router = useRouter();
+
+  const { landingPageData, setLandingPageData } = React.useContext(
+    LandingPageContext
+  );
+
+  // idle | loading | success | error
+  const [status, setStatus] = React.useState('idle');
+
+  async function handleGenerateSubmit(e) {
+    e.preventDefault();
+    setStatus('loading');
+    const formData = new FormData(e.target);
+    const idea = formData.get('ideaTextArea');
+
+    const endPoint = 'https://geniuspage.fly.dev/generate-idea';
+    const options = {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ idea }),
+    };
+
+    const res = await fetch(endPoint, options);
+    const result = await res.json();
+
+    if (result.response.status === 'ok') {
+      setStatus('success');
+      const newData = { ...landingPageData, ...result.response.data };
+      setLandingPageData(newData);
+
+      if (isSignedIn) {
+        router.push('/generatedPage');
+      } else {
+        openSignUp({
+          afterSignUpUrl: '/generatedPage',
+          afterSignInUrl: '/generatedPage',
+        });
+      }
+    } else {
+      setStatus('error');
+      console.error('there was an error fetching data');
+    }
+  }
+
   return (
     <>
-      <Head>
-        <title>GeniusPage - AI Generated Landing Pages</title>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1"
-        />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
       <Page.Header>
-        <Navbar>
-          <Container fluid>
-            <Navbar.Toggle aria-controls="responsive-navbar-nav" />
-            <Navbar.Brand href="#home">
-              <img
-                src="/logo-dark.svg"
-                width="30"
-                height="30"
-                className="d-inline-block align-top"
-                alt="GeniusPage Logo"
-              />{' '}
-              GeniusPage
-            </Navbar.Brand>
-            <Navbar.Collapse id="responsive-navbar-nav">
-              <Nav className="me-auto">
-                {/* If user is logged in, show sites bar, map over user's sites,
-                  if no sites, show create new site button */}
-                {isUserLoggedIn && (
-                  <NavDropdown
-                    title="Sites"
-                    id="collasible-nav-dropdown"
-                  >
-                    <NavDropdown.Item href="#action/3.1">
-                      Site #1
-                    </NavDropdown.Item>
-                    <NavDropdown.Item href="#action/3.2">
-                      Site #2
-                    </NavDropdown.Item>
-                    <NavDropdown.Item href="#action/3.3">
-                      Site #3
-                    </NavDropdown.Item>
-                  </NavDropdown>
-                )}
-              </Nav>
-              <Nav>
-                <Nav.Link href="/login">Login</Nav.Link>
-              </Nav>
-            </Navbar.Collapse>
-          </Container>
-        </Navbar>
-
-        {showFutureHome && (
-          <div>
-            <h2>Future Home of GeniusPage</h2>
-            <GPLogo />
-          </div>
-        )}
-        <div className={styles.description}>
-          <p style={{ fontWeight: 600 }}>
-            GeniusPage is an AI-powered landing page builder that
-            helps users quickly and easily create beautiful and
-            effective landing pages for their websites.
-          </p>
-          <p style={{ fontWeight: 600 }}>
-            By leveraging the power of artificial intelligence and
-            machine learning, GeniusPage provides a user-friendly
-            interface that allows users to customize their pages with
-            ease.
-          </p>
-        </div>
+        <NavBar isUserLoggedIn={isSignedIn} />
+        {!isSignedIn && <TopDescription />}
       </Page.Header>
+
       <RainbowContainer>
-        <Form
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            margin: '0 auto',
-          }}
-        >
-          <FloatingLabel
-            controlId="floatingTextarea"
-            label="Put your startup idea here!"
-          >
-            <Form.Control
-              as="textarea"
-              placeholder="Put your startup idea here!"
-              style={{ height: '200px', width: '400px' }}
-            />
-          </FloatingLabel>
-          <p>
-            Need an idea? <a href="#">Here are some examples!</a>
-          </p>
-          <Button>
-            <Image
-              src="/lightbulb-white.png"
-              width={30}
-              height={30}
-              className={styles.lightbulbIcon}
-            />{' '}
-            Generate!
-          </Button>
-        </Form>
+        {status === 'idle' && (
+          <StartUpIdeaForm
+            handleGenerateSubmit={handleGenerateSubmit}
+          />
+        )}
+        {status === 'loading' && <h2>Loading...</h2>}
       </RainbowContainer>
       <Page.Footer>
         <a
