@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, base64
 from flask import request, jsonify
 import openai
 from sqlalchemy.orm import sessionmaker
@@ -16,6 +16,41 @@ Base = declarative_base()
 
 app = Flask(__name__, static_folder='index.html')
 
+# Generate images 
+
+# @app.route('/images/<int:pid>.png')
+# def get_image(pid):
+#     image_binary = read_image(pid)
+#     response = make_response(image_binary)
+#     response.headers.set('Content-Type', 'image/png')
+#     response.headers.set(
+#         'Content-Disposition', 'attachment', filename='%s.png' % pid)
+#     return response
+
+
+@app.get("/")
+def generator(prompt: str):
+    with autocast(devices):
+        img = pipe(prompt, guidance_scale=8.5).images[0]
+        img2 = pipe(prompt, guidance_scale = 8.5).images[1]
+        img3 = pipe(prompt, guidance_scale = 8.5).images[3]
+
+    img.save("resultimage.png")
+    buffer = BytesIO()
+    img.save(buffer, format = "PNG")
+    imagestr = base64.b64encode(buffer.getvalue())
+
+    img2.save("result2image.png")
+    buffer = BytesIO()
+    img2.save(buffer, format = "PNG")
+    imagestr = base64.b64encode(buffer.getvalue())
+    
+    img3.save("result3image.png")
+    buffer = BytesIO()
+    img3.save(buffer, format = "PNG")
+    imagestr = base64.b64encode(buffer.getvalue())
+
+    return Response(content = imagestr, media_type = "image/png")
 
 @dataclass
 class LandingPage(Base):
@@ -99,6 +134,9 @@ def generate_landing_page_infos():
 
     response['review'] = openai.Completion.create(engine='text-davinci-001', prompt=review, max_tokens=25)
     response['review'] = response["review"]['choices'][0]['text']
+
+    response['resultimage.png'] = openai.Completion.create(engine='text-davinci-001', prompt=review, max_tokens=25)
+    response['resultimage.png'] = response["resultimage.png"]['choices'][0]['text']
 
     
 
