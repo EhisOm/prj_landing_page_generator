@@ -133,7 +133,7 @@ def generate_landing_page_infos():
 
 devices = "cuda"
 modelId = "CompVis/stable-diffusion-v1-4"
-pipe = StableDiffusionPipeline.from_pretrained(modelId, revision="fp16", torch_dtype = torch.float16, use_auth_token = SD_AUTH_TOKEN)
+pipe = StableDiffusionPipeline.from_pretrained(modelId, revision="fp16", torch_dtype = torch.float16, use_auth_token = auth_token)
 pipe.to(devices)
 
 @app.get("/")
