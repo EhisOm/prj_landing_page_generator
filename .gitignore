@@ -61,6 +61,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 python.exe
+auth_token.py
 
 
 # PyInstaller

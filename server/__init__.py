@@ -1,4 +1,5 @@
 from flask import Flask
+from auth_token import auth_token
 from flask import request, jsonify
 import openai, base64, torch
 from fastapi import FastAPI, Response
@@ -106,6 +107,12 @@ def generate_landing_page_infos():
 
     response['resultimage.png'] = openai.Completion.create(engine='text-davinci-001', prompt=review, max_tokens=25)
     response['resultimage.png'] = response["resultimage.png"]['choices'][0]['text']
+
+    response['result2image.png'] = openai.Completion.create(engine='text-davinci-001', prompt=review, max_tokens=25)
+    response['result2image.png'] = response["result2image.png"]['choices'][0]['text']
+
+    response['result1image.png'] = openai.Completion.create(engine='text-davinci-001', prompt=review, max_tokens=25)
+    response['result1image.png'] = response["result1image.png"]['choices'][0]['text']
 
     
 
